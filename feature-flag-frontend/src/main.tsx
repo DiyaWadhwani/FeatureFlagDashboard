@@ -1,0 +1,17 @@
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { ApolloProvider } from "@apollo/client/react";
+import { client } from "./apolloClient";
+import App from "./App";
+import "./index.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ApolloProvider client={client}>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </ApolloProvider>
+  </React.StrictMode>
+);

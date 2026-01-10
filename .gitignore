@@ -1,0 +1,20 @@
+# Node
+**/node_modules
+**/dist
+**/build
+**/.cache
+
+# Logs
+**/*.log
+
+# Env (very important)
+**/.env
+**/.env.*
+
+# OS
+.DS_Store
+
+# Prisma (optional safety; migrations SHOULD be committed)
+**/prisma/dev.db
+**/*.db
+**/*.db-journal
