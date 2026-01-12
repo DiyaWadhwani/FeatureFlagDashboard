@@ -16,11 +16,15 @@ interface FeatureFlag {
   id: string;
   name: string;
   enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface GetFeatureFlagsResponse {
   featureFlags: FeatureFlag[];
 }
+
+type ToggleFeatureFlagVars = { id: string };
 
 const GET_FEATURE_FLAGS = gql`
   query GetFeatureFlags {
@@ -28,27 +32,36 @@ const GET_FEATURE_FLAGS = gql`
       id
       name
       enabled
+      createdAt
+      updatedAt
     }
   }
 `;
 
 const TOGGLE_FEATURE_FLAG = gql`
-  mutation ToggleFeatureFlag($id: String!) {
+  mutation ToggleFeatureFlag($id: ID!) {
     toggleFeatureFlag(id: $id) {
       id
-      name
       enabled
     }
   }
 `;
 
 export function FeatureFlagsTable() {
-  const { data, loading, error } =
-    useQuery<GetFeatureFlagsResponse>(GET_FEATURE_FLAGS);
+  const { data, loading, error } = useQuery<{ featureFlags: FeatureFlag[] }>(
+    GET_FEATURE_FLAGS
+  );
 
   const [toggleFeatureFlag, { loading: toggling }] = useMutation(
     TOGGLE_FEATURE_FLAG,
     {
+      optimisticResponse: (vars: ToggleFeatureFlagVars) => ({
+        toggleFeatureFlag: {
+          __typename: "FeatureFlag",
+          id: vars.id,
+          enabled: !data?.featureFlags.find((f) => f.id === vars.id)?.enabled,
+        },
+      }),
       refetchQueries: [{ query: GET_FEATURE_FLAGS }],
     }
   );
@@ -87,21 +100,24 @@ export function FeatureFlagsTable() {
             </TableHead>
           </TableRow>
         </TableHeader>
+
         <TableBody>
-          {data?.featureFlags.map((flag: FeatureFlag) => (
+          {data!.featureFlags.map((flag) => (
             <TableRow key={flag.id} className="hover:bg-muted/50">
               <TableCell className="font-mono text-sm text-foreground">
                 {flag.name}
               </TableCell>
+
               <TableCell>
                 <StatusBadge enabled={flag.enabled} />
               </TableCell>
+
               <TableCell className="text-right">
                 <Switch
                   checked={flag.enabled}
+                  // disabled
                   onCheckedChange={() => handleToggle(flag.id)}
                   disabled={toggling}
-                  // loading={loadingId === flag.id}
                   aria-label={`Toggle ${flag.name}`}
                 />
               </TableCell>

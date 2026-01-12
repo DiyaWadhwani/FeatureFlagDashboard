@@ -1,45 +1,18 @@
-import {
-  Resolver,
-  Query,
-  ObjectType,
-  Field,
-  ID,
-  Mutation,
-  Args,
-} from '@nestjs/graphql';
+import { Resolver, Query, ID, Mutation, Args } from '@nestjs/graphql';
+import { FeatureService } from './feature.service';
+import { FeatureFlag } from './feature.model';
 
-@ObjectType()
-class FeatureFlag {
-  @Field(() => ID)
-  id: string;
-
-  @Field()
-  name: string;
-
-  @Field()
-  enabled: boolean;
-}
-
-@Resolver()
+@Resolver(() => FeatureFlag)
 export class FeatureResolver {
-  private flags = [
-    { id: '1', name: 'dark_mode_v2', enabled: true },
-    { id: '2', name: 'new_checkout_flow', enabled: false },
-    { id: '3', name: 'beta_analytics', enabled: true },
-  ];
+  constructor(private readonly featureService: FeatureService) {}
 
   @Query(() => [FeatureFlag])
-  featureFlags() {
-    return this.flags;
+  featureFlags(): Promise<FeatureFlag[]> {
+    return this.featureService.getAllFeatureFlags();
   }
 
   @Mutation(() => FeatureFlag)
-  toggleFeatureFlag(@Args('id') id: string) {
-    const flag = this.flags.find((f) => f.id === id);
-    if (!flag) {
-      throw new Error('Feature flag not found');
-    }
-    flag.enabled = !flag.enabled;
-    return flag;
+  toggleFeatureFlag(@Args('id', { type: () => ID }) id: string) {
+    return this.featureService.toggleFeatureFlag(id);
   }
 }
