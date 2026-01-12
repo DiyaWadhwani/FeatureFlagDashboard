@@ -172,5 +172,4 @@ npm run dev
 
 ---
 
-**License:** MIT  
-**Contributions:** Welcome!
+**License:** This project is licensed under the MIT License.
