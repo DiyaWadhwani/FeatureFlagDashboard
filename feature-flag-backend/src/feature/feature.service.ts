@@ -24,4 +24,11 @@ export class FeatureService {
       data: { enabled: !existing.enabled },
     });
   }
+
+  async isEnabled(name: string): Promise<boolean> {
+    const flag = await this.prisma.featureFlag.findUnique({
+      where: { name },
+    });
+    return flag ? flag.enabled : false;
+  }
 }

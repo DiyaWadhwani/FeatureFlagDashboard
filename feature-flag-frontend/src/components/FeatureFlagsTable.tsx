@@ -20,9 +20,9 @@ interface FeatureFlag {
   updatedAt: string;
 }
 
-interface GetFeatureFlagsResponse {
-  featureFlags: FeatureFlag[];
-}
+// interface GetFeatureFlagsResponse {
+//   featureFlags: FeatureFlag[];
+// }
 
 type ToggleFeatureFlagVars = { id: string };
 
