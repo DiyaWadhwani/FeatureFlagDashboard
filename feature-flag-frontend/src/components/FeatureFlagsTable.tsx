@@ -115,7 +115,6 @@ export function FeatureFlagsTable() {
               <TableCell className="text-right">
                 <Switch
                   checked={flag.enabled}
-                  // disabled
                   onCheckedChange={() => handleToggle(flag.id)}
                   disabled={toggling}
                   aria-label={`Toggle ${flag.name}`}
