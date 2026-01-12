@@ -1,6 +1,6 @@
 # Feature Flag Dashboard
 
-A full-stack feature flag management platform that allows applications to enable or disable functionality at runtime without redeploying code.
+A full-stack feature flag management platform with real consumer applications, enabling runtime control of application behavior without redeploying code.
 
 Built to demonstrate how modern systems safely roll out features, perform instant rollbacks, and decouple deployment from release.
 
@@ -104,20 +104,46 @@ mutation ToggleFeatureFlag($id: ID!) {
 - Immediate UI updates via GraphQL mutations
 - Database-backed state (no hardcoded flags)
 
+## 🧑‍🧑‍🧒‍🧒 Feature Flag Consumers
+
+This project includes real consumer implementations to demonstrate how feature flags affect application behavior in practice.
+
+### 🛒 Checkout Experience (Backend + Frontend)
+
+- Flag: `new_checkout_flow`
+- Behavior:
+  - OFF → Legacy checkout with itemized pricing and shipping
+  - ON → New checkout with holiday discounts and free shipping
+- Impact: The same endpoint returns different business logic responses at runtime based on the flag state
+  This simulates a production rollout of a new checkout system without redeploying backend or frontend code.
+
+### 🛒 Dark Mode Configuration
+
+- Flag: `dark_mode_v2`
+- Behavior:
+  - Controls whether the application renders in light or dark mode
+  - Applied globally via CSS variables and runtime configuration
+- Impact: - Flag: `new_checkout_flow`
+- Behavior:
+  - OFF → Legacy checkout with itemized pricing and shipping
+  - ON → New checkout with holiday discounts and free shipping
+- Impact: UI theme changes immediately based on centralized backend state
+
 ## 🧠 How This Is Used in Practice
 
 In a real application, a service or frontend would:
 
-1. Fetch feature flags at runtime
-2. Conditionally enable or disable code paths based on flag state
+1. Query feature flags at runtime
+2. Conditionally enable or disable code paths
 3. React immediately to changes without redeploying
 
 **Example (conceptual):**
 
 ```javascript
-if (featureFlags.dark_mode_v2) {
-  enableDarkMode();
+if (featureService.isEnabled("FLAG_NAME")) {
+  return newCheckout();
 }
+return legacyCheckout();
 ```
 
 This platform acts as the source of truth for those decisions.
@@ -127,21 +153,22 @@ This platform acts as the source of truth for those decisions.
 This project was built to demonstrate:
 
 - Designing a platform-style backend service
+- Decoupling feature release from deployment
 - Replacing static configuration with runtime controls
-- Building a system commonly used in large-scale production environments
-- Coordinating frontend and backend state via GraphQL
+- Integrating feature flags into real application flows
 
-It intentionally avoids overengineering (auth, targeting, rollouts) to keep the core concept clear and extensible.
+It intentionally avoids overengineering (auth, targeting, rollouts) to keep the core concept clear, realistic and extensible.
 
 ## 🔮 Future Enhancements
 
 Potential extensions include:
 
 - Environment-specific flags (dev / staging / prod)
-- Percentage rollouts
+- Percentage-based rollouts
 - User or cohort targeting
 - Audit logs (who changed what, when)
-- SDK-style consumers for other applications
+- SDK-style consumers for external services
+- Backend performance flags (caching, analytics, etc.)
 
 ## 🧪 Getting Started (Local)
 
