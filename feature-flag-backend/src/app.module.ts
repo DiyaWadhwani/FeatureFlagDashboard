@@ -4,6 +4,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { FeatureModule } from './feature/feature.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CheckoutModule } from './checkout/checkout.module';
+import { ThemeModule } from './theme/theme.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CheckoutModule } from './checkout/checkout.module';
     }),
     FeatureModule,
     CheckoutModule,
+    ThemeModule,
   ],
 })
 export class AppModule {}
