@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useConfig } from "../hooks/useConfig";
 
 type Item = {
   name: string;
@@ -26,17 +27,23 @@ type NewCheckout = {
 type CheckoutResponse = LegacyCheckout | NewCheckout;
 
 export default function Checkout() {
+  const { config, loading: configLoading } = useConfig();
   const [data, setData] = useState<CheckoutResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const checkoutEndpoint = config?.new_checkout_flow
+    ? "http://localhost:3000/checkout/experience?version=v2"
+    : "http://localhost:3000/checkout/experience?version=v1";
+
   useEffect(() => {
-    fetch("http://localhost:3000/checkout/experience")
+    fetch(checkoutEndpoint)
       .then((res) => res.json())
       .then(setData)
       .finally(() => setLoading(false));
-  }, []);
+  }, [checkoutEndpoint]);
 
-  if (loading) return <div className="p-6">Loading checkout…</div>;
+  if (loading || configLoading)
+    return <div className="p-6">Loading checkout…</div>;
   if (!data)
     return <div className="p-6 text-red-500">Failed to load checkout.</div>;
 
@@ -78,7 +85,7 @@ export default function Checkout() {
                 <div key={item.name} className="flex justify-between">
                   <span>{item.name}</span>
 
-                  {data.version === "v2" ? (
+                  {data.version === "v2" && config?.new_checkout_flow ? (
                     <span>
                       <span className="line-through text-muted-foreground mr-2">
                         ${item.price}
@@ -114,7 +121,7 @@ export default function Checkout() {
             <div className="flex justify-between">
               <span>Shipping</span>
               <span>
-                {data.version === "v2" ? (
+                {data.version === "v2" && config?.new_checkout_flow ? (
                   <span className="text-green-600 font-medium">FREE</span>
                 ) : (
                   `$${data.shipping}`

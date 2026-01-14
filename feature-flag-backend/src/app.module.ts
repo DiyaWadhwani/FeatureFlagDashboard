@@ -5,6 +5,7 @@ import { FeatureModule } from './feature/feature.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { ThemeModule } from './theme/theme.module';
+import { ConfigModule } from './config/config.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ThemeModule } from './theme/theme.module';
     FeatureModule,
     CheckoutModule,
     ThemeModule,
+    ConfigModule,
   ],
 })
 export class AppModule {}
