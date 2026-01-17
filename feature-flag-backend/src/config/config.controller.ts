@@ -1,17 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
-import { FeatureService } from '../feature/feature.service';
+import { ConfigService } from './config.service';
 
 @Controller('config')
 export class ConfigController {
-  constructor(private readonly featureService: FeatureService) {}
+  constructor(private readonly config: ConfigService) {}
 
   @Get()
   async getConfig() {
-    const flags = await this.featureService.getAllFeatureFlags();
-
-    return flags.reduce<Record<string, boolean>>((acc, flag) => {
-      acc[flag.name] = flag.enabled;
-      return acc;
-    }, {});
+    return this.config.getConfig();
   }
 }

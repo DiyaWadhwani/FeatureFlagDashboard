@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
 import { FeatureService } from '../feature/feature.service';
 
@@ -15,5 +15,11 @@ export class CheckoutController {
     return useNewCheckout
       ? this.checkout.newCheckout()
       : this.checkout.legacyCheckout();
+  }
+
+  @Post('complete')
+  async completePurchase() {
+    const result = await this.checkout.completeOrder();
+    return result;
   }
 }
