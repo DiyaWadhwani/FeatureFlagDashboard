@@ -20,4 +20,11 @@ export class AuditService {
     });
     return entry;
   }
+
+  async getAuditLogs(): Promise<FeatureFlagAudit[]> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    return await this.prisma.featureFlagAudit.findMany({
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
 }

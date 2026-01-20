@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { ThemeModule } from './theme/theme.module';
 import { ConfigModule } from './config/config.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ConfigModule } from './config/config.module';
     CheckoutModule,
     ThemeModule,
     ConfigModule,
+    AuditModule,
   ],
 })
 export class AppModule {}
