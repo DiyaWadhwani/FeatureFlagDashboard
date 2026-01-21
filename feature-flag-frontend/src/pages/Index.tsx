@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { FeatureFlagsTable } from "@/components/FeatureFlagsTable";
 import { Flag } from "lucide-react";
 
 const Index = () => {
+  const [flagCount, setFlagCount] = useState(0);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-6 py-12">
@@ -22,12 +25,12 @@ const Index = () => {
 
         {/* Table */}
         <main>
-          <FeatureFlagsTable />
+          <FeatureFlagsTable onCountChange={setFlagCount} />
         </main>
 
         {/* Footer info */}
         <footer className="mt-6 text-xs text-muted-foreground">
-          {8} feature flags configured
+          {flagCount} feature flags configured
         </footer>
       </div>
     </div>

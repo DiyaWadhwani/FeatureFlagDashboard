@@ -1,4 +1,3 @@
-import { gql } from "@apollo/client";
 import { useMutation, useQuery } from "@apollo/client/react";
 import {
   Table,
@@ -10,42 +9,24 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/StatusBadge";
+import { useEffect } from "react";
+import { GET_FEATURE_FLAGS, TOGGLE_FEATURE_FLAG } from "@/graphql/featureFlags";
+import type { FeatureFlag, ToggleFeatureFlagVars } from "@/types/featureFlags";
 
-interface FeatureFlag {
-  id: string;
-  name: string;
-  enabled: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+type Props = {
+  onCountChange: (count: number) => void;
+};
 
-type ToggleFeatureFlagVars = { id: string };
-
-const GET_FEATURE_FLAGS = gql`
-  query GetFeatureFlags {
-    featureFlags {
-      id
-      name
-      enabled
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-const TOGGLE_FEATURE_FLAG = gql`
-  mutation ToggleFeatureFlag($id: ID!) {
-    toggleFeatureFlag(id: $id) {
-      id
-      enabled
-    }
-  }
-`;
-
-export function FeatureFlagsTable() {
+export function FeatureFlagsTable({ onCountChange }: Props) {
   const { data, loading, error } = useQuery<{ featureFlags: FeatureFlag[] }>(
     GET_FEATURE_FLAGS,
   );
+
+  useEffect(() => {
+    if (data?.featureFlags && onCountChange) {
+      onCountChange(data.featureFlags.length);
+    }
+  }, [data, onCountChange]);
 
   const [toggleFeatureFlag, { loading: toggling }] = useMutation(
     TOGGLE_FEATURE_FLAG,
