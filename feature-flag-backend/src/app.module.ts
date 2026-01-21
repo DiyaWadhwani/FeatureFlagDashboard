@@ -4,7 +4,6 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { FeatureModule } from './feature/feature.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CheckoutModule } from './checkout/checkout.module';
-import { ThemeModule } from './theme/theme.module';
 import { ConfigModule } from './config/config.module';
 import { AuditModule } from './audit/audit.module';
 
@@ -18,7 +17,6 @@ import { AuditModule } from './audit/audit.module';
     }),
     FeatureModule,
     CheckoutModule,
-    ThemeModule,
     ConfigModule,
     AuditModule,
   ],
