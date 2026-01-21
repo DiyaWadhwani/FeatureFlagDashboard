@@ -1,6 +1,5 @@
 import { gql } from "@apollo/client";
 import { useMutation, useQuery } from "@apollo/client/react";
-// import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -19,10 +18,6 @@ interface FeatureFlag {
   createdAt: string;
   updatedAt: string;
 }
-
-// interface GetFeatureFlagsResponse {
-//   featureFlags: FeatureFlag[];
-// }
 
 type ToggleFeatureFlagVars = { id: string };
 
@@ -49,7 +44,7 @@ const TOGGLE_FEATURE_FLAG = gql`
 
 export function FeatureFlagsTable() {
   const { data, loading, error } = useQuery<{ featureFlags: FeatureFlag[] }>(
-    GET_FEATURE_FLAGS
+    GET_FEATURE_FLAGS,
   );
 
   const [toggleFeatureFlag, { loading: toggling }] = useMutation(
@@ -59,11 +54,12 @@ export function FeatureFlagsTable() {
         toggleFeatureFlag: {
           __typename: "FeatureFlag",
           id: vars.id,
-          enabled: !data?.featureFlags.find((f) => f.id === vars.id)?.enabled,
+          enabled: !data?.featureFlags.find((flag) => flag.id === vars.id)
+            ?.enabled,
         },
       }),
       refetchQueries: [{ query: GET_FEATURE_FLAGS }],
-    }
+    },
   );
 
   const handleToggle = async (id: string) => {

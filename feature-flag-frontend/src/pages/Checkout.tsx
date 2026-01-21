@@ -27,18 +27,21 @@ type NewCheckout = {
 type CheckoutResponse = LegacyCheckout | NewCheckout;
 
 export default function Checkout() {
-  const { config, loading: configLoading } = useConfig();
   const [data, setData] = useState<CheckoutResponse | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { config, loading: configLoading } = useConfig();
 
   const checkoutEndpoint = config?.new_checkout_flow
     ? "http://localhost:3000/checkout/experience?version=v2"
     : "http://localhost:3000/checkout/experience?version=v1";
 
   useEffect(() => {
+    if (!checkoutEndpoint) return;
+
     fetch(checkoutEndpoint)
       .then((res) => res.json())
-      .then(setData)
+      .then((json) => setData(json))
       .finally(() => setLoading(false));
   }, [checkoutEndpoint]);
 
@@ -85,7 +88,7 @@ export default function Checkout() {
                 <div key={item.name} className="flex justify-between">
                   <span>{item.name}</span>
 
-                  {data.version === "v2" && config?.new_checkout_flow ? (
+                  {data.version === "v2" ? (
                     <span>
                       <span className="line-through text-muted-foreground mr-2">
                         ${item.price}
@@ -121,7 +124,7 @@ export default function Checkout() {
             <div className="flex justify-between">
               <span>Shipping</span>
               <span>
-                {data.version === "v2" && config?.new_checkout_flow ? (
+                {data.version === "v2" ? (
                   <span className="text-green-600 font-medium">FREE</span>
                 ) : (
                   `$${data.shipping}`

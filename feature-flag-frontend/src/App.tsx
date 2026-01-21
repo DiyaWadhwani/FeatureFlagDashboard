@@ -11,12 +11,14 @@ import { useConfig } from "./hooks/useConfig";
 import { useEffect } from "react";
 
 function App() {
-  const { config } = useConfig();
+  const { config, loading } = useConfig();
 
   useEffect(() => {
     if (!config) return;
-    document.documentElement.classList.toggle("dark", config.dark_mode_v2);
+    document.documentElement.classList.toggle("dark", !!config.dark_mode_v2);
   }, [config]);
+
+  if (loading) return null;
 
   return (
     <TooltipProvider>

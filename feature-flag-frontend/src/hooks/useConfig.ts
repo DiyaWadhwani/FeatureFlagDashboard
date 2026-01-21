@@ -1,20 +1,40 @@
-import { useEffect, useState } from "react";
+import { gql } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 
 export type AppConfig = Record<string, boolean>;
 
+type FeatureFlag = {
+  name: string;
+  enabled: boolean;
+};
+
+type GetFeatureFlagsData = {
+  featureFlags: FeatureFlag[];
+};
+
+const GET_FEATURE_FLAGS_FOR_CONFIG = gql`
+  query GetFeatureFlagsForConfig {
+    featureFlags {
+      name
+      enabled
+    }
+  }
+`;
+
 export function useConfig() {
-  const [config, setConfig] = useState<AppConfig | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, error } = useQuery<GetFeatureFlagsData>(
+    GET_FEATURE_FLAGS_FOR_CONFIG,
+    {
+      fetchPolicy: "cache-and-network",
+      nextFetchPolicy: "cache-first",
+    },
+  );
 
-  useEffect(() => {
-    fetch("http://localhost:3000/config")
-      .then((res) => res.json())
-      .then((json) => {
-        setConfig(json);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+  const config: AppConfig | null = data
+    ? Object.fromEntries(
+        data.featureFlags.map((flag) => [flag.name, flag.enabled]),
+      )
+    : null;
 
-  return { config, loading };
+  return { config, loading, error };
 }
