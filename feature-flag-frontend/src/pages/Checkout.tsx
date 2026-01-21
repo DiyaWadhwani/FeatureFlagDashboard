@@ -1,30 +1,7 @@
 import { useEffect, useState } from "react";
 import { useConfig } from "../hooks/useConfig";
-
-type Item = {
-  name: string;
-  price: number;
-};
-
-type LegacyCheckout = {
-  version: "v1";
-  items: Item[];
-  shipping: number;
-  total: number;
-  message: string;
-};
-
-type NewCheckout = {
-  version: "v2";
-  items: Item[];
-  subtotal: number;
-  discount: number;
-  shipping: number;
-  total: number;
-  message: string;
-};
-
-type CheckoutResponse = LegacyCheckout | NewCheckout;
+import { FEATURE_FLAGS } from "../constants";
+import type { CheckoutResponse } from "../types/checkout";
 
 export default function Checkout() {
   const [data, setData] = useState<CheckoutResponse | null>(null);
@@ -32,7 +9,7 @@ export default function Checkout() {
 
   const { config, loading: configLoading } = useConfig();
 
-  const checkoutEndpoint = config?.new_checkout_flow
+  const checkoutEndpoint = config?.[FEATURE_FLAGS.NEW_CHECKOUT_FLOW]
     ? "http://localhost:3000/checkout/experience?version=v2"
     : "http://localhost:3000/checkout/experience?version=v1";
 

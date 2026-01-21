@@ -1,14 +1,28 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Flag, ScrollText, ShoppingCart } from "lucide-react";
-
-const navItems = [
-  { path: "/", label: "Feature Flags", icon: Flag },
-  { path: "/audit", label: "Audit Log", icon: ScrollText },
-  { path: "/checkout", label: "Consumer Preview", icon: ShoppingCart },
-];
+import { FEATURE_FLAGS } from "@/constants";
+import type { NavItem } from "@/types/navItem";
+import { useConfig } from "@/hooks/useConfig";
 
 export function DashboardLayout() {
   const location = useLocation();
+  const { config } = useConfig();
+
+  if (!config) return null;
+
+  const rawNavItems = [
+    { path: "/", label: "Feature Flags", icon: Flag },
+    config[FEATURE_FLAGS.BETA_ANALYTICS] && {
+      path: "/audit",
+      label: "Audit Log",
+      icon: ScrollText,
+    },
+    { path: "/checkout", label: "Consumer Preview", icon: ShoppingCart },
+  ];
+
+  const navItems: NavItem[] = rawNavItems.filter((item): item is NavItem =>
+    Boolean(item),
+  );
 
   return (
     <div className="min-h-screen bg-background">

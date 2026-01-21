@@ -9,13 +9,17 @@ import Checkout from "./pages/Checkout";
 import Audit from "./pages/Audit";
 import { useConfig } from "./hooks/useConfig";
 import { useEffect } from "react";
+import { FEATURE_FLAGS } from "./constants";
 
 function App() {
   const { config, loading } = useConfig();
 
   useEffect(() => {
     if (!config) return;
-    document.documentElement.classList.toggle("dark", !!config.dark_mode_v2);
+    document.documentElement.classList.toggle(
+      "dark",
+      !!config[FEATURE_FLAGS.DARK_MODE_V2],
+    );
   }, [config]);
 
   if (loading) return null;
@@ -29,7 +33,10 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/checkout" element={<Checkout />} />
-            <Route path="/audit" element={<Audit />} />
+
+            {config?.[FEATURE_FLAGS.BETA_ANALYTICS] && (
+              <Route path="/audit" element={<Audit />} />
+            )}
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

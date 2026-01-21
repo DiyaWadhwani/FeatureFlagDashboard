@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { useConfig } from "../hooks/useConfig";
+import { Navigate } from "react-router-dom";
+import { FEATURE_FLAGS } from "../constants";
 
 type AuditEntry = {
   id: string;
@@ -10,10 +13,12 @@ type AuditEntry = {
 };
 
 export default function Audit() {
+  const { config } = useConfig();
   const [logs, setLogs] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!config?.[FEATURE_FLAGS.BETA_ANALYTICS]) return;
     console.log("Fetching audit logs...");
     fetch("http://localhost:3000/audit")
       .then((res) => res.json())
@@ -22,7 +27,11 @@ export default function Audit() {
         setLogs(data);
         setLoading(false);
       });
-  }, []);
+  }, [config?.[FEATURE_FLAGS.BETA_ANALYTICS]]);
+
+  if (!config?.[FEATURE_FLAGS.BETA_ANALYTICS]) {
+    return <Navigate to="/" replace />;
+  }
 
   if (loading)
     return <p className="text-muted-foreground">Loading audit logs…</p>;
