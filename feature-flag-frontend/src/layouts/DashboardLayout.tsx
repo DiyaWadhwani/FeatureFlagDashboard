@@ -12,7 +12,7 @@ export function DashboardLayout() {
 
   const rawNavItems = [
     { path: "/", label: "Feature Flags", icon: Flag },
-    config[FEATURE_FLAGS.BETA_ANALYTICS] && {
+    config[FEATURE_FLAGS.AUDIT_LOG_VISIBILITY] && {
       path: "/audit",
       label: "Audit Log",
       icon: ScrollText,

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FeatureService } from '../feature/feature.service';
+import { FEATURE_FLAGS } from '../constants';
 
 @Injectable()
 export class CheckoutService {
@@ -39,7 +40,7 @@ export class CheckoutService {
   async completeOrder() {
     const subtotal = this.items.reduceRight((sum, i) => sum + i.price, 0);
 
-    if (await this.flags.isEnabled('beta_analytics')) {
+    if (await this.flags.isEnabled(FEATURE_FLAGS.AUDIT_LOG_VISIBILITY)) {
       console.log('[ANALYTICS]', {
         event: 'CHECKOUT_COMPLETED',
         subtotal,

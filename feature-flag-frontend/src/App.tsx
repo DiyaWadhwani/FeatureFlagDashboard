@@ -18,7 +18,7 @@ function App() {
     if (!config) return;
     document.documentElement.classList.toggle(
       "dark",
-      !!config[FEATURE_FLAGS.DARK_MODE_V2],
+      !!config[FEATURE_FLAGS.DARK_MODE],
     );
   }, [config]);
 
@@ -34,7 +34,7 @@ function App() {
             <Route path="/" element={<Index />} />
             <Route path="/checkout" element={<Checkout />} />
 
-            {config?.[FEATURE_FLAGS.BETA_ANALYTICS] && (
+            {config?.[FEATURE_FLAGS.AUDIT_LOG_VISIBILITY] && (
               <Route path="/audit" element={<Audit />} />
             )}
           </Route>

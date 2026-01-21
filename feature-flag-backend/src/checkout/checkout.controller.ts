@@ -1,6 +1,7 @@
 import { Controller, Get, Post } from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
 import { FeatureService } from '../feature/feature.service';
+import { FEATURE_FLAGS } from '../constants';
 
 @Controller('checkout')
 export class CheckoutController {
@@ -11,7 +12,9 @@ export class CheckoutController {
 
   @Get('experience')
   async getCheckoutExperience() {
-    const useNewCheckout = await this.features.isEnabled('new_checkout_flow');
+    const useNewCheckout = await this.features.isEnabled(
+      FEATURE_FLAGS.DISCOUNTED_CHECKOUT,
+    );
     return useNewCheckout
       ? this.checkout.newCheckout()
       : this.checkout.legacyCheckout();

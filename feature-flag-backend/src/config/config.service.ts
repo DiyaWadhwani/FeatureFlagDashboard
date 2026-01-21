@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FeatureService } from '../feature/feature.service';
+import { FEATURE_FLAGS } from '../constants';
 
 @Injectable()
 export class ConfigService {
@@ -9,7 +10,9 @@ export class ConfigService {
   constructor(private readonly flags: FeatureService) {}
 
   async getConfig() {
-    const cacheEnabled = await this.flags.isEnabled('experimental_cache');
+    const cacheEnabled = await this.flags.isEnabled(
+      FEATURE_FLAGS.EXPERIMENTAL_CACHE,
+    );
     const now = Date.now();
 
     if (cacheEnabled && this.cache && now - this.cacheTimestamp < 10_000) {

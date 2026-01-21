@@ -1,6 +1,6 @@
 export const FEATURE_FLAGS = {
-  DARK_MODE_V2: "dark_mode_v2",
-  BETA_ANALYTICS: "beta_analytics",
-  NEW_CHECKOUT_FLOW: "new_checkout_flow",
+  DARK_MODE: "dark_mode",
+  DISCOUNTED_CHECKOUT: "discounted_checkout",
+  AUDIT_LOG_VISIBILITY: "audit_log_visibility",
   EXPERIMENTAL_CACHE: "experimental_cache",
 };

@@ -18,7 +18,7 @@ export default function Audit() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!config?.[FEATURE_FLAGS.BETA_ANALYTICS]) return;
+    if (!config?.[FEATURE_FLAGS.AUDIT_LOG_VISIBILITY]) return;
     console.log("Fetching audit logs...");
     fetch("http://localhost:3000/audit")
       .then((res) => res.json())
@@ -27,9 +27,9 @@ export default function Audit() {
         setLogs(data);
         setLoading(false);
       });
-  }, [config?.[FEATURE_FLAGS.BETA_ANALYTICS]]);
+  }, [config?.[FEATURE_FLAGS.AUDIT_LOG_VISIBILITY]]);
 
-  if (!config?.[FEATURE_FLAGS.BETA_ANALYTICS]) {
+  if (!config?.[FEATURE_FLAGS.AUDIT_LOG_VISIBILITY]) {
     return <Navigate to="/" replace />;
   }
 

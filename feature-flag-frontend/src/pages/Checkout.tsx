@@ -9,7 +9,7 @@ export default function Checkout() {
 
   const { config, loading: configLoading } = useConfig();
 
-  const checkoutEndpoint = config?.[FEATURE_FLAGS.NEW_CHECKOUT_FLOW]
+  const checkoutEndpoint = config?.[FEATURE_FLAGS.DISCOUNTED_CHECKOUT]
     ? "http://localhost:3000/checkout/experience?version=v2"
     : "http://localhost:3000/checkout/experience?version=v1";
 

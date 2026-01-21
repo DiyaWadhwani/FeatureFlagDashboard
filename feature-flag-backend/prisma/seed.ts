@@ -9,9 +9,9 @@ const prisma = new PrismaClient();
 async function main() {
   await prisma.featureFlag.createMany({
     data: [
-      { name: 'dark_mode_v2', enabled: true },
-      { name: 'new_checkout_flow', enabled: false },
-      { name: 'beta_analytics', enabled: true },
+      { name: 'dark_mode', enabled: true },
+      { name: 'discounted_checkout', enabled: false },
+      { name: 'audit_log_visibility', enabled: true },
       { name: 'experimental_cache', enabled: false },
     ],
     skipDuplicates: true,
