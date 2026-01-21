@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useConfig } from "../hooks/useConfig";
 import { FEATURE_FLAGS } from "../constants";
 import type { CheckoutResponse } from "../types/checkout";
+import { CHECKOUT_API_ENDPOINT_V1, CHECKOUT_API_ENDPOINT_V2 } from "../URL";
 
 export default function Checkout() {
   const [data, setData] = useState<CheckoutResponse | null>(null);
@@ -10,8 +11,8 @@ export default function Checkout() {
   const { config, loading: configLoading } = useConfig();
 
   const checkoutEndpoint = config?.[FEATURE_FLAGS.DISCOUNTED_CHECKOUT]
-    ? "http://localhost:3000/checkout/experience?version=v2"
-    : "http://localhost:3000/checkout/experience?version=v1";
+    ? CHECKOUT_API_ENDPOINT_V2
+    : CHECKOUT_API_ENDPOINT_V1;
 
   useEffect(() => {
     if (!checkoutEndpoint) return;

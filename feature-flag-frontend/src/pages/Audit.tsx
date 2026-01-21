@@ -2,15 +2,8 @@ import { useEffect, useState } from "react";
 import { useConfig } from "../hooks/useConfig";
 import { Navigate } from "react-router-dom";
 import { FEATURE_FLAGS } from "../constants";
-
-type AuditEntry = {
-  id: string;
-  flagName: string;
-  oldValue: boolean;
-  newValue: boolean;
-  source: string;
-  updatedAt: string;
-};
+import type { AuditEntry } from "../types/auditEntry";
+import { AUDIT_API_ENDPOINT } from "../URL";
 
 export default function Audit() {
   const { config } = useConfig();
@@ -20,7 +13,7 @@ export default function Audit() {
   useEffect(() => {
     if (!config?.[FEATURE_FLAGS.AUDIT_LOG_VISIBILITY]) return;
     console.log("Fetching audit logs...");
-    fetch("http://localhost:3000/audit")
+    fetch(AUDIT_API_ENDPOINT)
       .then((res) => res.json())
       .then((data) => {
         console.log("Received audit logs:", data);
