@@ -35,9 +35,7 @@ export default function Checkout() {
     <div className="min-h-screen bg-muted/40 flex items-center justify-center p-6">
       <div className="w-full max-w-lg space-y-6">
         <h1 className="text-3xl font-bold">
-          {data.version === "v2"
-            ? "New Checkout Experience"
-            : "Legacy Checkout"}
+          {data.version === "v2" ? "Discounted Checkout" : "Legacy Checkout"}
         </h1>
 
         <div className="rounded-xl border bg-card shadow-sm p-6 space-y-4">
