@@ -1,14 +1,13 @@
 # Feature Flag Console
 
-A production-style feature flag management console that enables real-time control over application behavior without redeploying code. The system demonstrates how modern engineering teams release features safely, enforce governance boundaries, and retain auditability in production environments.
-
-**This project focuses on operational correctness and engineering maturity, not just toggling features.**
+A production-style **feature flag management console** that enables real-time control over application behavior without redeploying code. The system demonstrates how modern engineering teams **release features safely, enforce governance boundaries, and retain auditability** in production environments.
+This project focuses on **operational correctness and engineering maturity**, not just toggling features.
 
 ---
 
 ## 🚀 Overview
 
-Feature flags (also known as feature toggles) are a foundational pattern in large-scale systems. This project implements a centralized feature flag service with a web-based console, a GraphQL API, and a persistent audit log—mirroring how internal tooling is designed at high-growth and enterprise engineering organizations.
+Feature flags (also known as feature toggles) are a foundational pattern in large-scale systems. This project implements a centralized feature flag service with a web-based console, a GraphQL API, and a persistent audit log, mirroring how internal tooling is designed at high-growth and enterprise engineering organizations.
 
 Beyond basic enable/disable behavior, the console models real-world constraints, including:
 
@@ -43,7 +42,7 @@ Beyond basic enable/disable behavior, the console models real-world constraints,
 
 ```
 ┌────────────┐      GraphQL / REST      ┌──────────────┐
-│  Frontend  │  ───────────────────▶   │   Backend    │
+│  Frontend  │  ───────────────────▶    │   Backend    │
 │  (Vercel)  │                          │  (NestJS)    │
 └────────────┘                          └──────┬───────┘
                                                 │
@@ -51,7 +50,7 @@ Beyond basic enable/disable behavior, the console models real-world constraints,
                                                 ▼
                                          ┌──────────────┐
                                          │ PostgreSQL   │
-                                         │   (Neon)    │
+                                         │   (Neon)     │
                                          └──────────────┘
 ```
 
