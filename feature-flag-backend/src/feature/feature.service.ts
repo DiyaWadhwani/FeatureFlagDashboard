@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { FEATURE_FLAGS } from '../constants';
 import { FeatureFlag } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 
@@ -32,7 +33,10 @@ export class FeatureService {
       flagName: existing.name,
       oldValue: existing.enabled,
       newValue: updated.enabled,
-      source: 'dashboard',
+      source:
+        existing.name === FEATURE_FLAGS.EXPERIMENTAL_CACHE
+          ? 'infra-dashboard'
+          : 'dashboard',
     });
 
     return updated;

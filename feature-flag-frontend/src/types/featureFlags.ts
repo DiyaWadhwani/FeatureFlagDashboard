@@ -3,8 +3,11 @@ export interface FeatureFlagBase {
   enabled: boolean;
 }
 
+export type FeatureFlagTier = "SAFE" | "SENSITIVE" | "CRITICAL";
+
 export interface FeatureFlag extends FeatureFlagBase {
   id: string;
+  tier: FeatureFlagTier;
   createdAt: string;
   updatedAt: string;
 }

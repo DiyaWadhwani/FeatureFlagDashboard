@@ -13,10 +13,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum FeatureFlagTier {
+  SAFE
+  SENSITIVE
+  CRITICAL
+}
+
 model FeatureFlag {
   id        String   @id @default(uuid())
   name      String   @unique
   enabled   Boolean
+  tier      FeatureFlagTier  @default(SAFE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

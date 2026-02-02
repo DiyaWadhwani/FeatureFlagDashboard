@@ -22,17 +22,27 @@ export class ConfigService {
 
     console.log('🔵 Fetching CONFIG from DATABASE');
 
-    const flags = await this.flags.getAllFeatureFlags();
-    const config = flags.reduce<Record<string, boolean>>((acc, flag) => {
-      acc[flag.name] = flag.enabled;
-      return acc;
-    }, {});
+    try {
+      const flags = await this.flags.getAllFeatureFlags();
 
-    if (cacheEnabled) {
-      this.cache = config;
-      this.cacheTimestamp = now;
+      const config = flags.reduce<Record<string, boolean>>((acc, flag) => {
+        acc[flag.name] = flag.enabled;
+        return acc;
+      }, {});
+
+      if (cacheEnabled) {
+        this.cache = config;
+        this.cacheTimestamp = now;
+      }
+
+      return config;
+    } catch (error) {
+      if (cacheEnabled && this.cache) {
+        console.warn('🟠 DB fetch failed — serving STALE cached config');
+        return this.cache;
+      }
+
+      throw error;
     }
-
-    return config;
   }
 }

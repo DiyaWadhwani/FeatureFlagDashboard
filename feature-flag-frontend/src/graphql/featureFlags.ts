@@ -6,6 +6,7 @@ export const GET_FEATURE_FLAGS = gql`
       id
       name
       enabled
+      tier
       createdAt
       updatedAt
     }

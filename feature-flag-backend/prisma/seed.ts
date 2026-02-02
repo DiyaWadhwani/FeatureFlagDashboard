@@ -2,20 +2,40 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, FeatureFlagTier } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.featureFlag.createMany({
-    data: [
-      { name: 'dark_mode', enabled: true },
-      { name: 'discounted_checkout', enabled: false },
-      { name: 'audit_log_visibility', enabled: true },
-      { name: 'experimental_cache', enabled: false },
-    ],
-    skipDuplicates: true,
-  });
+  const flags = [
+    { name: 'dark_mode', enabled: true, tier: FeatureFlagTier.SAFE },
+    {
+      name: 'discounted_checkout',
+      enabled: false,
+      tier: FeatureFlagTier.CRITICAL,
+    },
+    {
+      name: 'audit_log_visibility',
+      enabled: true,
+      tier: FeatureFlagTier.SENSITIVE,
+    },
+    {
+      name: 'experimental_cache',
+      enabled: false,
+      tier: FeatureFlagTier.SENSITIVE,
+    },
+  ];
+
+  for (const flag of flags) {
+    await prisma.featureFlag.upsert({
+      where: { name: flag.name },
+      update: {
+        enabled: flag.enabled,
+        tier: flag.tier,
+      },
+      create: flag,
+    });
+  }
 }
 
 main()
