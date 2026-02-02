@@ -10,9 +10,11 @@ import Audit from "./pages/Audit";
 import { useConfig } from "./hooks/useConfig";
 import { useEffect } from "react";
 import { FEATURE_FLAGS } from "./constants";
+import SignIn from "./pages/SignIn";
 
 function App() {
   const { config, loading } = useConfig();
+  const actorRole = localStorage.getItem("actorRole");
 
   useEffect(() => {
     if (!config) return;
@@ -21,6 +23,10 @@ function App() {
       !!config[FEATURE_FLAGS.DARK_MODE],
     );
   }, [config]);
+
+  if (!actorRole) {
+    return <SignIn />;
+  }
 
   if (loading) return null;
 

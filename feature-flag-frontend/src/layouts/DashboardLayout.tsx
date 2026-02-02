@@ -3,6 +3,7 @@ import { Flag, ScrollText, ShoppingCart } from "lucide-react";
 import { FEATURE_FLAGS } from "@/constants";
 import type { NavItem } from "@/types/navItem";
 import { useConfig } from "@/hooks/useConfig";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 
 export function DashboardLayout() {
   const location = useLocation();
@@ -27,22 +28,26 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Nav */}
+
       <nav className="border-b bg-card">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex gap-6">
-          {navItems.map(({ path, label, icon: Icon }) => (
-            <Link
-              key={path}
-              to={path}
-              className={`flex items-center gap-2 text-sm font-medium ${
-                location.pathname === path
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
-          ))}
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex gap-6">
+            {navItems.map(({ path, label, icon: Icon }) => (
+              <Link
+                key={path}
+                to={path}
+                className={`flex items-center gap-2 text-sm font-medium ${
+                  location.pathname === path
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+          </div>
+          <RoleSwitcher />
         </div>
       </nav>
 

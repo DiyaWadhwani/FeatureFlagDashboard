@@ -3,7 +3,6 @@ import { TierBadge } from "./TierBadge";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
@@ -20,28 +19,37 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useEffect } from "react";
 import { GET_FEATURE_FLAGS, TOGGLE_FEATURE_FLAG } from "@/graphql/featureFlags";
 import type { FeatureFlag, ToggleFeatureFlagVars } from "@/types/featureFlags";
+import { CAN_TOGGLE_TIER, type ActorRole, FLAG_TIERS } from "@/constants";
 
 type Props = {
   onCountChange: (count: number) => void;
 };
 
-const FLAG_INFO: Record<string, { description: string; impact: string }> = {
+const FLAG_INFO: Record<
+  string,
+  { severity?: string; description: string; impact: string }
+> = {
   dark_mode: {
-    description: "Controls UI theme for end users.",
-    impact: "Cosmetic only. No impact on data or revenue.",
+    severity: FLAG_TIERS.SAFE,
+    description: "Enables dark theme styling across the console UI.",
+    impact: "Cosmetic only. No effect on data, pricing, or system behavior.",
   },
   audit_log_visibility: {
-    description: "Emits analytics-style logs during checkout.",
-    impact: "Improves observability and operational visibility.",
+    severity: FLAG_TIERS.CRITICAL,
+    description: "Controls access to system audit logs.",
+    impact: "Restricted to administrators to preserve audit integrity.",
   },
   discounted_checkout: {
-    description: "Applies discounted pricing logic at checkout.",
-    impact: "Revenue-impacting. Incorrect toggles affect billing.",
+    severity: FLAG_TIERS.SENSITIVE,
+    description: "Enables discounted pricing logic in the checkout flow.",
+    impact:
+      "Business-impacting. Misuse can change totals and affect revenue; rollback is immediate.",
   },
   experimental_cache: {
-    description: "Caches feature configuration in memory.",
+    severity: FLAG_TIERS.SENSITIVE,
+    description: "Caches the computed feature configuration for faster reads.",
     impact:
-      "Improves performance but may serve stale configuration during failures.",
+      "Operational risk. Improves performance but may briefly serve stale configuration during rollouts/rollbacks.",
   },
 };
 
@@ -89,6 +97,9 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
     );
   }
 
+  const actorRole = (localStorage.getItem("actorRole") ??
+    "DEVELOPER") as ActorRole;
+
   return (
     <div className="rounded-md border bg-card">
       <Table>
@@ -107,13 +118,14 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
         </TableHeader>
 
         <TableBody>
-          {data!.featureFlags.map((flag) => (
-            <TableRow key={flag.id} className="hover:bg-muted/50">
-              <TableCell className="space-y-1">
-                <div className="flex items-center gap-2 font-mono text-sm text-foreground">
-                  {flag.name}
+          {data!.featureFlags.map((flag) => {
+            const canToggle = CAN_TOGGLE_TIER[actorRole].has(flag.tier);
+            return (
+              <TableRow key={flag.id} className="hover:bg-muted/50">
+                <TableCell className="space-y-1">
+                  <div className="flex items-center gap-2 font-mono text-sm text-foreground">
+                    {flag.name}
 
-                  <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button className="text-muted-foreground hover:text-foreground">
@@ -122,6 +134,11 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
                       </TooltipTrigger>
 
                       <TooltipContent className="max-w-xs">
+                        {FLAG_INFO[flag.name]?.severity && (
+                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            {FLAG_INFO[flag.name]?.severity} flag
+                          </p>
+                        )}
                         <div className="space-y-1 max-w-[220px]">
                           <p className="text-[11px] font-medium text-foreground">
                             {FLAG_INFO[flag.name]?.description}
@@ -134,26 +151,31 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
                         </div>
                       </TooltipContent>
                     </Tooltip>
-                  </TooltipProvider>
-                </div>
+                  </div>
 
-                <TierBadge tier={flag.tier} />
-              </TableCell>
+                  <TierBadge tier={flag.tier} />
+                </TableCell>
 
-              <TableCell>
-                <StatusBadge enabled={flag.enabled} />
-              </TableCell>
+                <TableCell>
+                  <StatusBadge enabled={flag.enabled} />
+                </TableCell>
 
-              <TableCell className="text-right">
-                <Switch
-                  checked={flag.enabled}
-                  onCheckedChange={() => handleToggle(flag.id)}
-                  disabled={toggling}
-                  aria-label={`Toggle ${flag.name}`}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
+                <TableCell className="text-right">
+                  {!canToggle && (
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Requires admin privileges
+                    </p>
+                  )}
+                  <Switch
+                    checked={flag.enabled}
+                    onCheckedChange={() => handleToggle(flag.id)}
+                    disabled={!canToggle || toggling}
+                    aria-label={`Toggle ${flag.name}`}
+                  />
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

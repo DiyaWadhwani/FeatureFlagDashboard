@@ -8,21 +8,25 @@ const prisma = new PrismaClient();
 
 async function main() {
   const flags = [
-    { name: 'dark_mode', enabled: true, tier: FeatureFlagTier.SAFE },
-    {
-      name: 'discounted_checkout',
-      enabled: false,
-      tier: FeatureFlagTier.CRITICAL,
-    },
     {
       name: 'audit_log_visibility',
+      tier: FeatureFlagTier.CRITICAL,
       enabled: true,
+    },
+    {
+      name: 'discounted_checkout',
       tier: FeatureFlagTier.SENSITIVE,
+      enabled: false,
     },
     {
       name: 'experimental_cache',
-      enabled: false,
       tier: FeatureFlagTier.SENSITIVE,
+      enabled: false,
+    },
+    {
+      name: 'dark_mode',
+      tier: FeatureFlagTier.SAFE,
+      enabled: false,
     },
   ];
 
