@@ -4,6 +4,7 @@ import { FEATURE_FLAGS } from '../constants';
 import { FeatureFlag } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { AiService } from '../ai/ai.service';
+import { KafkaService } from '../kafka/kafka.service';
 
 @Injectable()
 export class FeatureService {
@@ -11,6 +12,7 @@ export class FeatureService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly ai: AiService,
+    private readonly kafka: KafkaService,
   ) {}
 
   async getAllFeatureFlags(): Promise<FeatureFlag[]> {
@@ -33,14 +35,26 @@ export class FeatureService {
       data: { enabled: !existing.enabled },
     });
 
+    const source =
+      existing.name === FEATURE_FLAGS.EXPERIMENTAL_CACHE
+        ? 'infra-dashboard'
+        : 'dashboard';
+
     await this.audit.logFlagToggle({
       flagName: existing.name,
       oldValue: existing.enabled,
       newValue: updated.enabled,
-      source:
-        existing.name === FEATURE_FLAGS.EXPERIMENTAL_CACHE
-          ? 'infra-dashboard'
-          : 'dashboard',
+      source,
+    });
+
+    // fire-and-forget — does not block the toggle response
+    this.kafka.publishFlagToggled({
+      flagName: existing.name,
+      oldValue: existing.enabled,
+      newValue: updated.enabled,
+      tier: existing.tier,
+      source,
+      timestamp: new Date().toISOString(),
     });
 
     const recentHistory = await this.prisma.featureFlagAudit.findMany({
