@@ -27,6 +27,7 @@ export const TOGGLE_FEATURE_FLAG = gql`
     toggleFeatureFlag(id: $id) {
       id
       enabled
+      riskNote
     }
   }
 `;

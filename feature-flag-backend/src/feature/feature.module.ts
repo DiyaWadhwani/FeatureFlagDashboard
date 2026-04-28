@@ -3,9 +3,10 @@ import { FeatureResolver } from './feature.resolver';
 import { FeatureService } from './feature.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuditModule } from '../audit/audit.module';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
-  imports: [PrismaModule, AuditModule],
+  imports: [PrismaModule, AuditModule, AiModule],
   providers: [FeatureResolver, FeatureService],
   exports: [FeatureService],
 })

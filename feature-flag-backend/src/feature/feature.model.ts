@@ -27,4 +27,7 @@ export class FeatureFlag {
 
   @Field(() => GraphQLISODateTime)
   updatedAt: Date;
+
+  @Field(() => String, { nullable: true })
+  riskNote?: string;
 }

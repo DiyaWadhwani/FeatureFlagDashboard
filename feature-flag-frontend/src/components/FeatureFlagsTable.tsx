@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Info, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -16,9 +16,14 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useEffect } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { GET_FEATURE_FLAGS, TOGGLE_FEATURE_FLAG } from "@/graphql/featureFlags";
-import type { FeatureFlag, ToggleFeatureFlagVars } from "@/types/featureFlags";
+import type {
+  FeatureFlag,
+  FeatureFlagTier,
+  ToggleFeatureFlagVars,
+  ToggleFeatureFlagResult,
+} from "@/types/featureFlags";
 import { CAN_TOGGLE_TIER, type ActorRole, FLAG_TIERS } from "@/constants";
 
 type Props = {
@@ -53,10 +58,32 @@ const FLAG_INFO: Record<
   },
 };
 
+const RISK_NOTE_STYLES: Record<
+  FeatureFlagTier,
+  { container: string; text: string }
+> = {
+  SAFE: {
+    container: "bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
+    text: "text-blue-700 dark:text-blue-300",
+  },
+  SENSITIVE: {
+    container: "bg-yellow-50 border border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800",
+    text: "text-yellow-700 dark:text-yellow-300",
+  },
+  CRITICAL: {
+    container: "bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-800",
+    text: "text-red-700 dark:text-red-300",
+  },
+};
+
 export function FeatureFlagsTable({ onCountChange }: Props) {
   const { data, loading, error } = useQuery<{ featureFlags: FeatureFlag[] }>(
     GET_FEATURE_FLAGS,
   );
+
+  const [riskNotes, setRiskNotes] = useState<
+    Record<string, { note: string; tier: FeatureFlagTier }>
+  >({});
 
   useEffect(() => {
     if (data?.featureFlags && onCountChange) {
@@ -64,25 +91,37 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
     }
   }, [data, onCountChange]);
 
-  const [toggleFeatureFlag, { loading: toggling }] = useMutation(
-    TOGGLE_FEATURE_FLAG,
-    {
-      optimisticResponse: (vars: ToggleFeatureFlagVars) => ({
-        toggleFeatureFlag: {
-          __typename: "FeatureFlag",
-          id: vars.id,
-          enabled: !data?.featureFlags.find((flag) => flag.id === vars.id)
-            ?.enabled,
-        },
-      }),
-      refetchQueries: [{ query: GET_FEATURE_FLAGS }],
-    },
-  );
+  const [toggleFeatureFlag, { loading: toggling }] = useMutation<
+    ToggleFeatureFlagResult,
+    ToggleFeatureFlagVars
+  >(TOGGLE_FEATURE_FLAG, {
+    optimisticResponse: (vars: ToggleFeatureFlagVars) => ({
+      toggleFeatureFlag: {
+        __typename: "FeatureFlag",
+        id: vars.id,
+        enabled: !data?.featureFlags.find((flag) => flag.id === vars.id)
+          ?.enabled,
+        riskNote: null,
+      },
+    }),
+    refetchQueries: [{ query: GET_FEATURE_FLAGS }],
+  });
 
-  const handleToggle = async (id: string) => {
-    await toggleFeatureFlag({
-      variables: { id },
+  const dismissNote = (id: string) => {
+    setRiskNotes((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
     });
+  };
+
+  const handleToggle = async (id: string, tier: FeatureFlagTier) => {
+    const result = await toggleFeatureFlag({ variables: { id } });
+    const note = result.data?.toggleFeatureFlag?.riskNote;
+    if (note) {
+      setRiskNotes((prev) => ({ ...prev, [id]: { note, tier } }));
+      setTimeout(() => dismissNote(id), 10000);
+    }
   };
 
   if (loading) {
@@ -120,60 +159,85 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
         <TableBody>
           {data!.featureFlags.map((flag) => {
             const canToggle = CAN_TOGGLE_TIER[actorRole].has(flag.tier);
+            const activeNote = riskNotes[flag.id];
             return (
-              <TableRow key={flag.id} className="hover:bg-muted/50">
-                <TableCell className="space-y-1">
-                  <div className="flex items-center gap-2 font-mono text-sm text-foreground">
-                    {flag.name}
+              <Fragment key={flag.id}>
+                <TableRow className="hover:bg-muted/50">
+                  <TableCell className="space-y-1">
+                    <div className="flex items-center gap-2 font-mono text-sm text-foreground">
+                      {flag.name}
 
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button className="text-muted-foreground hover:text-foreground">
-                          <Info className="h-3.5 w-3.5" />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button className="text-muted-foreground hover:text-foreground">
+                            <Info className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+
+                        <TooltipContent className="max-w-xs">
+                          {FLAG_INFO[flag.name]?.severity && (
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                              {FLAG_INFO[flag.name]?.severity} flag
+                            </p>
+                          )}
+                          <div className="space-y-1 max-w-[220px]">
+                            <p className="text-[11px] font-medium text-foreground">
+                              {FLAG_INFO[flag.name]?.description}
+                            </p>
+
+                            <p className="text-[11px] text-muted-foreground">
+                              <span className="font-medium">Impact:</span>{" "}
+                              {FLAG_INFO[flag.name]?.impact}
+                            </p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+
+                    <TierBadge tier={flag.tier} />
+                  </TableCell>
+
+                  <TableCell>
+                    <StatusBadge enabled={flag.enabled} />
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    {!canToggle && (
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Requires admin privileges
+                      </p>
+                    )}
+                    <Switch
+                      checked={flag.enabled}
+                      onCheckedChange={() => handleToggle(flag.id, flag.tier)}
+                      disabled={!canToggle || toggling}
+                      aria-label={`Toggle ${flag.name}`}
+                    />
+                  </TableCell>
+                </TableRow>
+
+                {activeNote && (
+                  <TableRow key={`${flag.id}-risk`} className="hover:bg-transparent">
+                    <TableCell colSpan={3} className="pt-0 pb-2 px-4">
+                      <div
+                        className={`flex items-start justify-between gap-3 rounded-md px-3 py-2 text-sm ${RISK_NOTE_STYLES[activeNote.tier].container}`}
+                      >
+                        <p className={`leading-snug ${RISK_NOTE_STYLES[activeNote.tier].text}`}>
+                          <span className="font-semibold">AI Risk Note: </span>
+                          {activeNote.note}
+                        </p>
+                        <button
+                          onClick={() => dismissNote(flag.id)}
+                          className={`mt-0.5 shrink-0 opacity-60 hover:opacity-100 ${RISK_NOTE_STYLES[activeNote.tier].text}`}
+                          aria-label="Dismiss risk note"
+                        >
+                          <X className="h-3.5 w-3.5" />
                         </button>
-                      </TooltipTrigger>
-
-                      <TooltipContent className="max-w-xs">
-                        {FLAG_INFO[flag.name]?.severity && (
-                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                            {FLAG_INFO[flag.name]?.severity} flag
-                          </p>
-                        )}
-                        <div className="space-y-1 max-w-[220px]">
-                          <p className="text-[11px] font-medium text-foreground">
-                            {FLAG_INFO[flag.name]?.description}
-                          </p>
-
-                          <p className="text-[11px] text-muted-foreground">
-                            <span className="font-medium">Impact:</span>{" "}
-                            {FLAG_INFO[flag.name]?.impact}
-                          </p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-
-                  <TierBadge tier={flag.tier} />
-                </TableCell>
-
-                <TableCell>
-                  <StatusBadge enabled={flag.enabled} />
-                </TableCell>
-
-                <TableCell className="text-right">
-                  {!canToggle && (
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      Requires admin privileges
-                    </p>
-                  )}
-                  <Switch
-                    checked={flag.enabled}
-                    onCheckedChange={() => handleToggle(flag.id)}
-                    disabled={!canToggle || toggling}
-                    aria-label={`Toggle ${flag.name}`}
-                  />
-                </TableCell>
-              </TableRow>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
             );
           })}
         </TableBody>

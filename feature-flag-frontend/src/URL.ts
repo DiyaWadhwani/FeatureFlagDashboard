@@ -3,5 +3,6 @@ export const BACKEND_URL =
 
 export const GRAPHQL_ENDPOINT = `${BACKEND_URL}/graphql`;
 export const AUDIT_API_ENDPOINT = `${BACKEND_URL}/audit`;
+export const AUDIT_SUMMARY_ENDPOINT = `${BACKEND_URL}/audit/summary`;
 export const CHECKOUT_API_ENDPOINT_V1 = `${BACKEND_URL}/checkout/experience?version=v1`;
 export const CHECKOUT_API_ENDPOINT_V2 = `${BACKEND_URL}/checkout/experience?version=v2`;

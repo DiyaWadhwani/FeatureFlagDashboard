@@ -16,6 +16,14 @@ export type ToggleFeatureFlagVars = {
   id: string;
 };
 
+export type ToggleFeatureFlagResult = {
+  toggleFeatureFlag: {
+    id: string;
+    enabled: boolean;
+    riskNote?: string | null;
+  };
+};
+
 export type GetFeatureFlagsData = {
   featureFlags: FeatureFlag[];
 };

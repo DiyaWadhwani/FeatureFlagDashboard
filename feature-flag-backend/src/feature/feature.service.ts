@@ -3,19 +3,23 @@ import { PrismaService } from '../prisma/prisma.service';
 import { FEATURE_FLAGS } from '../constants';
 import { FeatureFlag } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class FeatureService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly ai: AiService,
   ) {}
 
   async getAllFeatureFlags(): Promise<FeatureFlag[]> {
     return this.prisma.featureFlag.findMany({ orderBy: { name: 'asc' } });
   }
 
-  async toggleFeatureFlag(id: string): Promise<FeatureFlag> {
+  async toggleFeatureFlag(
+    id: string,
+  ): Promise<FeatureFlag & { riskNote?: string }> {
     const existing = await this.prisma.featureFlag.findUnique({
       where: { id },
     });
@@ -39,7 +43,26 @@ export class FeatureService {
           : 'dashboard',
     });
 
-    return updated;
+    const recentHistory = await this.prisma.featureFlagAudit.findMany({
+      where: { flagName: existing.name },
+      orderBy: { updatedAt: 'desc' },
+      take: 10,
+    });
+
+    let riskNote: string | undefined;
+    try {
+      riskNote = await this.ai.assessToggleRisk({
+        flagName: existing.name,
+        tier: existing.tier,
+        oldValue: existing.enabled,
+        newValue: updated.enabled,
+        recentHistory,
+      });
+    } catch (err) {
+      console.error('AI risk assessment failed:', err);
+    }
+
+    return { ...updated, riskNote };
   }
 
   async isEnabled(flagName: string): Promise<boolean> {
