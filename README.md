@@ -33,6 +33,8 @@ Beyond basic enable/disable behavior, the console models real-world constraints,
 - GraphQL API for feature flags
 - REST endpoints for audit logs and example consumer flows
 - Prisma ORM
+- Anthropic Claude API (AI risk advisor + audit summarizer)
+- KafkaJS producer (fire-and-forget flag toggle events)
 - Deployed on Render
 
 **Database**
@@ -40,19 +42,96 @@ Beyond basic enable/disable behavior, the console models real-world constraints,
 - PostgreSQL (Neon – serverless)
 - Persistent storage for feature flags and audit events
 
+**Event Streaming**
+
+- Apache Kafka (via Docker Compose for local dev)
+- Go consumer service — subscribes to `flag.toggled`, logs events with structured JSON logging (`slog`)
+
 ```
-┌────────────┐      GraphQL / REST      ┌──────────────┐
-│  Frontend  │  ───────────────────▶    │   Backend    │
-│  (Vercel)  │                          │  (NestJS)    │
-└────────────┘                          └──────┬───────┘
-                                                │
-                                                │ Prisma
-                                                ▼
-                                         ┌──────────────┐
-                                         │ PostgreSQL   │
-                                         │   (Neon)     │
-                                         └──────────────┘
+┌────────────┐      GraphQL / REST      ┌──────────────────────┐
+│  Frontend  │  ───────────────────▶    │   Backend (NestJS)   │
+│  (Vercel)  │                          └──┬────────┬───────────┘
+└────────────┘                             │        │
+                                     Prisma│        │ KafkaJS
+                                           ▼        ▼
+                                    ┌──────────┐  ┌──────────────┐
+                                    │PostgreSQL│  │ Kafka Broker │
+                                    │  (Neon)  │  └──────┬───────┘
+                                    └──────────┘         │
+                                                         │ flag.toggled
+                                                         ▼
+                                                  ┌──────────────┐
+                                                  │ Go Consumer  │
+                                                  │ (Docker)     │
+                                                  └──────────────┘
 ```
+
+---
+
+## 🤖 AI Integration (Phase 1)
+
+### AI Risk Advisor
+
+Every flag toggle triggers an AI risk assessment via the Anthropic Claude API. The result appears as a dismissible inline callout directly below the toggled flag row — no separate page, no modal.
+
+- Color-coded by tier: **blue** for SAFE, **yellow** for SENSITIVE, **red** for CRITICAL
+- Auto-dismisses after 10 seconds or on manual close
+- Non-blocking: the toggle response resolves immediately; the risk note arrives when the AI call completes
+- If the AI call fails, the toggle still succeeds silently
+
+The backend passes the flag name, tier, old/new values, and the last 10 audit entries for that flag as context. The AI responds with a 2–3 sentence operational assessment.
+
+### AI Audit Summarizer
+
+The Audit Log page includes an AI-generated plain-English summary card at the top, covering the last 50 audit entries.
+
+- Identifies the most-frequently toggled flag
+- Detects potential rollbacks (flags toggled back and forth)
+- Cached server-side for 60 seconds to avoid redundant API calls
+- **Refresh Summary** button busts the cache and fetches a new summary on demand
+- Shows an animated skeleton while loading
+
+---
+
+## 📡 Kafka Event Streaming (Phase 2)
+
+Every flag toggle publishes a fire-and-forget event to a Kafka topic (`flag.toggled`) after the database write. The toggle response is never blocked on Kafka.
+
+**Event payload:**
+```json
+{
+  "flagName": "discounted_checkout",
+  "oldValue": true,
+  "newValue": false,
+  "tier": "SENSITIVE",
+  "source": "dashboard",
+  "timestamp": "2025-10-22T14:30:00.000Z"
+}
+```
+
+If Kafka is unavailable (e.g., running the backend without Docker), the producer warns once at startup and skips publishing — the toggle flow is unaffected.
+
+### Go Consumer
+
+A standalone Go service (`feature-flag-consumer/`) subscribes to the `flag.toggled` topic and handles each event:
+
+1. **Structured logging** — emits a JSON log line per event using Go's standard `log/slog`
+2. **Cache invalidation stub** — fires an HTTP request to the backend's `/config` endpoint to warm the config cache
+3. **Webhook dispatcher stub** — logs `"would send webhook to: [url]"` (ready for real webhook wiring)
+
+### Running Locally with Docker
+
+```bash
+# Start Zookeeper + Kafka + Go consumer
+docker compose up
+
+# In a separate terminal — backend connects to localhost:9092
+cd feature-flag-backend && npm run start:dev
+```
+
+The Kafka broker is configured with two listeners:
+- `localhost:9092` — for the NestJS backend running on the host
+- `kafka:29092` — for the Go consumer running inside Docker
 
 ---
 
@@ -234,12 +313,20 @@ All feature behavior is evaluated at runtime, without redeploying code.
 - GraphQL
 - REST APIs
 - Prisma
+- KafkaJS (Kafka producer)
+- Anthropic Claude API
+
+**Event Streaming**
+
+- Apache Kafka + Zookeeper (Docker Compose)
+- Go 1.22 consumer service (`log/slog`, `segmentio/kafka-go`)
 
 **Infrastructure**
 
 - Neon (PostgreSQL)
 - Render (Backend hosting)
 - Vercel (Frontend hosting)
+- Docker (local Kafka + Go consumer)
 
 ---
 
