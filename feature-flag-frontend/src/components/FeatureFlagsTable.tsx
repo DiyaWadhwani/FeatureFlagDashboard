@@ -63,15 +63,18 @@ const RISK_NOTE_STYLES: Record<
   { container: string; text: string }
 > = {
   SAFE: {
-    container: "bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
+    container:
+      "bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
     text: "text-blue-700 dark:text-blue-300",
   },
   SENSITIVE: {
-    container: "bg-yellow-50 border border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800",
+    container:
+      "bg-yellow-50 border border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800",
     text: "text-yellow-700 dark:text-yellow-300",
   },
   CRITICAL: {
-    container: "bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-800",
+    container:
+      "bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-800",
     text: "text-red-700 dark:text-red-300",
   },
 };
@@ -120,7 +123,7 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
     const note = result.data?.toggleFeatureFlag?.riskNote;
     if (note) {
       setRiskNotes((prev) => ({ ...prev, [id]: { note, tier } }));
-      setTimeout(() => dismissNote(id), 10000);
+      // setTimeout(() => dismissNote(id), 10000);
     }
   };
 
@@ -217,12 +220,17 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
                 </TableRow>
 
                 {activeNote && (
-                  <TableRow key={`${flag.id}-risk`} className="hover:bg-transparent">
+                  <TableRow
+                    key={`${flag.id}-risk`}
+                    className="hover:bg-transparent"
+                  >
                     <TableCell colSpan={3} className="pt-0 pb-2 px-4">
                       <div
                         className={`flex items-start justify-between gap-3 rounded-md px-3 py-2 text-sm ${RISK_NOTE_STYLES[activeNote.tier].container}`}
                       >
-                        <p className={`leading-snug ${RISK_NOTE_STYLES[activeNote.tier].text}`}>
+                        <p
+                          className={`leading-snug ${RISK_NOTE_STYLES[activeNote.tier].text}`}
+                        >
                           <span className="font-semibold">AI Risk Note: </span>
                           {activeNote.note}
                         </p>

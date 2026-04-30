@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import Anthropic from '@anthropic-ai/sdk';
 import type { FeatureFlagAudit } from '@prisma/client';
 
 @Injectable()
 export class AiService {
+  private readonly client: Anthropic;
+
+  constructor() {
+    this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+
   async assessToggleRisk(params: {
     flagName: string;
     tier: string;
@@ -10,47 +17,58 @@ export class AiService {
     newValue: boolean;
     recentHistory: FeatureFlagAudit[];
   }): Promise<string> {
-    const { flagName, tier, oldValue, newValue } = params;
-    const action = newValue ? 'enabled' : 'disabled';
-    return `[Mock] ${flagName} (${tier}) was ${action} (${oldValue} → ${newValue}). This is a mock risk assessment — replace with a real Anthropic API call when credits are available.`;
+    const { flagName, tier, oldValue, newValue, recentHistory } = params;
+
+    const historyText =
+      recentHistory.length > 0
+        ? `toggled ${recentHistory.length} times recently`
+        : 'no recent toggle history';
+
+    const prompt =
+      `Flag: ${flagName} | Tier: ${tier} | Changed: ${oldValue} → ${newValue} | ` +
+      `Recent history: ${historyText}. ` +
+      `Assess the risk of this change in 2-3 sentences for an operator dashboard. Be concise and direct.`;
+
+    const message = await this.client.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 150,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const content = message.content[0];
+    if (content.type === 'text') {
+      return content.text;
+    }
+    return 'Risk assessment unavailable.';
   }
 
   async generateAuditSummary(logs: FeatureFlagAudit[]): Promise<string> {
     if (logs.length === 0) {
-      return '[Mock] No audit activity recorded yet.';
+      return 'No audit activity recorded yet.';
     }
 
-    const uniqueFlags = new Set(logs.map((l) => l.flagName));
-    const flagCounts = logs.reduce<Record<string, number>>((acc, l) => {
-      acc[l.flagName] = (acc[l.flagName] ?? 0) + 1;
-      return acc;
-    }, {});
-    const [topFlag, topCount] = Object.entries(flagCounts).sort(
-      (a, b) => b[1] - a[1],
-    )[0];
+    const logLines = logs
+      .map(
+        (l) =>
+          `${l.flagName}: ${l.oldValue} → ${l.newValue} via ${l.source} at ${l.updatedAt.toISOString()}`,
+      )
+      .join('\n');
 
-    const rolledBackFlags = [...uniqueFlags].filter((name) => {
-      const flagLogs = logs.filter((l) => l.flagName === name);
-      return (
-        flagLogs.some((l) => l.oldValue && !l.newValue) &&
-        flagLogs.some((l) => !l.oldValue && l.newValue)
-      );
+    const prompt =
+      `Here are the last ${logs.length} feature flag audit entries:\n\n${logLines}\n\n` +
+      `Summarize this activity in 2-3 sentences of plain English for an operator dashboard. ` +
+      `Mention which flags were most active, note any rollbacks, and flag anything unusual.`;
+
+    const message = await this.client.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 200,
+      messages: [{ role: 'user', content: prompt }],
     });
 
-    const since = new Date(
-      logs[logs.length - 1].updatedAt,
-    ).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
-    let summary =
-      `[Mock] ${logs.length} toggle${logs.length !== 1 ? 's' : ''} recorded across ` +
-      `${uniqueFlags.size} flag${uniqueFlags.size !== 1 ? 's' : ''} since ${since}. ` +
-      `${topFlag} was the most active (${topCount} change${topCount !== 1 ? 's' : ''}). `;
-
-    summary +=
-      rolledBackFlags.length > 0
-        ? `Potential rollbacks detected on: ${rolledBackFlags.join(', ')}.`
-        : 'No rollbacks detected.';
-
-    return summary;
+    const content = message.content[0];
+    if (content.type === 'text') {
+      return content.text;
+    }
+    return 'Audit summary unavailable.';
   }
 }
