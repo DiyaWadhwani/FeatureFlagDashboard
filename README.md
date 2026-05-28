@@ -1,4 +1,4 @@
-# Feature Flag Console
+# Gatekeeper
 
 A production-style **feature flag management console** that enables real-time control over application behavior without redeploying code. The system demonstrates how modern engineering teams **release features safely, enforce governance boundaries, and retain auditability** in production environments.
 This project focuses on **operational correctness and engineering maturity**, not just toggling features.
@@ -423,7 +423,7 @@ It demonstrates:
 
 ## 🌐 Live Demo
 
-- **Frontend:** [https://feature-flag-console.vercel.app](https://feature-flag-console.vercel.app)
+- **Frontend:** [https://gatekeeperhq.vercel.app](https://gatekeeperhq.vercel.app)
 - **Backend:** [https://featureflagdashboard.onrender.com](https://featureflagdashboard.onrender.com)
 
 **Tip:** Use the role selector to explore how permissions, audit visibility, and feature control change between Admin and Developer contexts.

@@ -7,10 +7,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
 
   app.enableCors({
-    origin: [
-      'https://feature-flag-console.vercel.app',
-      'http://localhost:5173',
-    ],
+    origin: ['https://gatekeeperhq.vercel.app', 'http://localhost:5173'],
   });
 
   await app.listen(port);

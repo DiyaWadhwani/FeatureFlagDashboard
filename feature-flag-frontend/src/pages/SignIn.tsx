@@ -11,7 +11,7 @@ export default function SignIn() {
       <div className="w-full max-w-sm rounded-lg border bg-card p-6 space-y-4">
         <h1 className="text-lg font-semibold">Sign in</h1>
         <p className="text-sm text-muted-foreground">
-          Choose how you want to operate the feature flag console.
+          Choose how you want to operate Gatekeeper.
         </p>
 
         <button
