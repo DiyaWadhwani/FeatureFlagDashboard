@@ -1,4 +1,4 @@
-import { ObjectType, Field, ID, GraphQLISODateTime } from '@nestjs/graphql';
+import { ObjectType, Field, ID, GraphQLISODateTime, Int } from '@nestjs/graphql';
 import { FeatureFlagTier } from '@prisma/client';
 import { registerEnumType } from '@nestjs/graphql';
 
@@ -27,6 +27,9 @@ export class FeatureFlag {
 
   @Field(() => GraphQLISODateTime)
   updatedAt: Date;
+
+  @Field(() => Int)
+  rolloutPercentage: number;
 
   @Field(() => String, { nullable: true })
   riskNote?: string;

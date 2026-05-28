@@ -11,12 +11,13 @@ import (
 )
 
 type flagToggledEvent struct {
-	FlagName  string `json:"flagName"`
-	OldValue  bool   `json:"oldValue"`
-	NewValue  bool   `json:"newValue"`
-	Tier      string `json:"tier"`
-	Source    string `json:"source"`
-	Timestamp string `json:"timestamp"`
+	FlagName          string `json:"flagName"`
+	OldValue          bool   `json:"oldValue"`
+	NewValue          bool   `json:"newValue"`
+	Tier              string `json:"tier"`
+	Source            string `json:"source"`
+	Timestamp         string `json:"timestamp"`
+	RolloutPercentage *int   `json:"rolloutPercentage,omitempty"`
 }
 
 func runConsumer(
@@ -49,14 +50,18 @@ func runConsumer(
 			continue
 		}
 
-		logger.Info("flag toggled",
+		logArgs := []any{
 			"flagName", event.FlagName,
 			"oldValue", event.OldValue,
 			"newValue", event.NewValue,
 			"tier", event.Tier,
 			"source", event.Source,
 			"timestamp", event.Timestamp,
-		)
+		}
+		if event.RolloutPercentage != nil {
+			logArgs = append(logArgs, "rolloutPercentage", *event.RolloutPercentage)
+		}
+		logger.Info("flag toggled", logArgs...)
 
 		// Stub: invalidate config cache
 		if backendURL != "" {

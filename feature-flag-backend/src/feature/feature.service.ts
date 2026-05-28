@@ -79,10 +79,44 @@ export class FeatureService {
     return { ...updated, riskNote };
   }
 
-  async isEnabled(flagName: string): Promise<boolean> {
+  async isEnabled(flagName: string, clientId?: string): Promise<boolean> {
     const flag = await this.prisma.featureFlag.findUnique({
       where: { name: flagName },
     });
-    return flag?.enabled ?? false;
+    if (!flag?.enabled) return false;
+    if (!clientId) return true;
+    const bucket = this.hashClientId(clientId) % 100;
+    return bucket < flag.rolloutPercentage;
+  }
+
+  async updateRolloutPercentage(
+    id: string,
+    percentage: number,
+  ): Promise<FeatureFlag> {
+    const existing = await this.prisma.featureFlag.findUnique({ where: { id } });
+    if (!existing) throw new Error('Feature flag not found');
+
+    const updated = await this.prisma.featureFlag.update({
+      where: { id },
+      data: { rolloutPercentage: percentage },
+    });
+
+    await this.audit.logFlagToggle({
+      flagName: existing.name,
+      oldValue: existing.enabled,
+      newValue: updated.enabled,
+      source: 'dashboard',
+      rolloutPercentage: percentage,
+    });
+
+    return updated;
+  }
+
+  private hashClientId(clientId: string): number {
+    let hash = 5381;
+    for (let i = 0; i < clientId.length; i++) {
+      hash = ((hash << 5) + hash + clientId.charCodeAt(i)) >>> 0;
+    }
+    return hash;
   }
 }

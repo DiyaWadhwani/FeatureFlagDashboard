@@ -16,13 +16,18 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useEffect, useState, Fragment } from "react";
-import { GET_FEATURE_FLAGS, TOGGLE_FEATURE_FLAG } from "@/graphql/featureFlags";
+import { Fragment, useEffect, useRef, useState } from "react";
+import {
+  GET_FEATURE_FLAGS,
+  TOGGLE_FEATURE_FLAG,
+  UPDATE_ROLLOUT_PERCENTAGE,
+} from "@/graphql/featureFlags";
 import type {
   FeatureFlag,
   FeatureFlagTier,
   ToggleFeatureFlagVars,
   ToggleFeatureFlagResult,
+  UpdateRolloutPercentageVars,
 } from "@/types/featureFlags";
 import { CAN_TOGGLE_TIER, type ActorRole, FLAG_TIERS } from "@/constants";
 
@@ -63,18 +68,15 @@ const RISK_NOTE_STYLES: Record<
   { container: string; text: string }
 > = {
   SAFE: {
-    container:
-      "bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
+    container: "bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
     text: "text-blue-700 dark:text-blue-300",
   },
   SENSITIVE: {
-    container:
-      "bg-yellow-50 border border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800",
+    container: "bg-yellow-50 border border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800",
     text: "text-yellow-700 dark:text-yellow-300",
   },
   CRITICAL: {
-    container:
-      "bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-800",
+    container: "bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-800",
     text: "text-red-700 dark:text-red-300",
   },
 };
@@ -87,6 +89,11 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
   const [riskNotes, setRiskNotes] = useState<
     Record<string, { note: string; tier: FeatureFlagTier }>
   >({});
+
+  const [pendingPercentages, setPendingPercentages] = useState<
+    Record<string, number>
+  >({});
+  const timerRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     if (data?.featureFlags && onCountChange) {
@@ -110,6 +117,13 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
     refetchQueries: [{ query: GET_FEATURE_FLAGS }],
   });
 
+  const [updateRolloutPercentage] = useMutation<
+    { updateRolloutPercentage: { id: string; rolloutPercentage: number } },
+    UpdateRolloutPercentageVars
+  >(UPDATE_ROLLOUT_PERCENTAGE, {
+    refetchQueries: [{ query: GET_FEATURE_FLAGS }],
+  });
+
   const dismissNote = (id: string) => {
     setRiskNotes((prev) => {
       const next = { ...prev };
@@ -123,8 +137,23 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
     const note = result.data?.toggleFeatureFlag?.riskNote;
     if (note) {
       setRiskNotes((prev) => ({ ...prev, [id]: { note, tier } }));
-      // setTimeout(() => dismissNote(id), 10000);
     }
+  };
+
+  const handlePercentageChange = (id: string, percentage: number) => {
+    setPendingPercentages((prev) => ({ ...prev, [id]: percentage }));
+    clearTimeout(timerRefs.current[id]);
+    timerRefs.current[id] = setTimeout(() => {
+      void updateRolloutPercentage({ variables: { id, percentage } }).then(
+        () => {
+          setPendingPercentages((prev) => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
+        },
+      );
+    }, 500);
   };
 
   if (loading) {
@@ -163,6 +192,8 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
           {data!.featureFlags.map((flag) => {
             const canToggle = CAN_TOGGLE_TIER[actorRole].has(flag.tier);
             const activeNote = riskNotes[flag.id];
+            const displayedPercentage =
+              pendingPercentages[flag.id] ?? flag.rolloutPercentage;
             return (
               <Fragment key={flag.id}>
                 <TableRow className="hover:bg-muted/50">
@@ -216,21 +247,35 @@ export function FeatureFlagsTable({ onCountChange }: Props) {
                       disabled={!canToggle || toggling}
                       aria-label={`Toggle ${flag.name}`}
                     />
+
+                    {flag.enabled && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={displayedPercentage}
+                          onChange={(e) =>
+                            handlePercentageChange(flag.id, Number(e.target.value))
+                          }
+                          className="h-1.5 w-full cursor-pointer accent-primary"
+                          aria-label={`Rollout percentage for ${flag.name}`}
+                        />
+                        <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
+                          {displayedPercentage}%
+                        </span>
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
 
                 {activeNote && (
-                  <TableRow
-                    key={`${flag.id}-risk`}
-                    className="hover:bg-transparent"
-                  >
+                  <TableRow className="hover:bg-transparent">
                     <TableCell colSpan={3} className="pt-0 pb-2 px-4">
                       <div
                         className={`flex items-start justify-between gap-3 rounded-md px-3 py-2 text-sm ${RISK_NOTE_STYLES[activeNote.tier].container}`}
                       >
-                        <p
-                          className={`leading-snug ${RISK_NOTE_STYLES[activeNote.tier].text}`}
-                        >
+                        <p className={`leading-snug ${RISK_NOTE_STYLES[activeNote.tier].text}`}>
                           <span className="font-semibold">AI Risk Note: </span>
                           {activeNote.note}
                         </p>

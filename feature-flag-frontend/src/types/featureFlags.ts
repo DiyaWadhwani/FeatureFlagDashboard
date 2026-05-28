@@ -8,12 +8,18 @@ export type FeatureFlagTier = "SAFE" | "SENSITIVE" | "CRITICAL";
 export interface FeatureFlag extends FeatureFlagBase {
   id: string;
   tier: FeatureFlagTier;
+  rolloutPercentage: number;
   createdAt: string;
   updatedAt: string;
 }
 
 export type ToggleFeatureFlagVars = {
   id: string;
+};
+
+export type UpdateRolloutPercentageVars = {
+  id: string;
+  percentage: number;
 };
 
 export type ToggleFeatureFlagResult = {

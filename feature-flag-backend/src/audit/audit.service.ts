@@ -18,12 +18,19 @@ export class AuditService {
     oldValue: boolean;
     newValue: boolean;
     source: string;
+    rolloutPercentage?: number;
   }): Promise<FeatureFlagAudit> {
     console.log('🟣 AUDIT SERVICE CALLED');
 
+    const { rolloutPercentage, ...rest } = params;
+    const source =
+      rolloutPercentage !== undefined
+        ? `${rest.source} (rollout: ${rolloutPercentage}%)`
+        : rest.source;
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const entry: FeatureFlagAudit = await this.prisma.featureFlagAudit.create({
-      data: params,
+      data: { ...rest, source },
     });
     return entry;
   }

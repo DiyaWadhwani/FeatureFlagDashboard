@@ -1,4 +1,4 @@
-import { Resolver, Query, ID, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, ID, Mutation, Args, Int } from '@nestjs/graphql';
 import { FeatureService } from './feature.service';
 import { FeatureFlag } from './feature.model';
 
@@ -14,5 +14,13 @@ export class FeatureResolver {
   @Mutation(() => FeatureFlag)
   toggleFeatureFlag(@Args('id', { type: () => ID }) id: string) {
     return this.featureService.toggleFeatureFlag(id);
+  }
+
+  @Mutation(() => FeatureFlag)
+  updateRolloutPercentage(
+    @Args('id', { type: () => ID }) id: string,
+    @Args('percentage', { type: () => Int }) percentage: number,
+  ) {
+    return this.featureService.updateRolloutPercentage(id, percentage);
   }
 }
