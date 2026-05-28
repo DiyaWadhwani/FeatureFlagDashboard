@@ -47,6 +47,11 @@ Beyond basic enable/disable behavior, the console models real-world constraints,
 - Apache Kafka (via Docker Compose for local dev)
 - Go consumer service — subscribes to `flag.toggled`, logs events with structured JSON logging (`slog`)
 
+**Kubernetes**
+
+- Production-ready manifests in `k8s/` for the Go consumer
+- Deployment, ConfigMap, and HPA (HorizontalPodAutoscaler)
+
 ```
 ┌────────────┐      GraphQL / REST      ┌──────────────────────┐
 │  Frontend  │  ───────────────────▶    │   Backend (NestJS)   │
@@ -60,10 +65,13 @@ Beyond basic enable/disable behavior, the console models real-world constraints,
                                     └──────────┘         │
                                                          │ flag.toggled
                                                          ▼
-                                                  ┌──────────────┐
-                                                  │ Go Consumer  │
-                                                  │ (Docker)     │
-                                                  └──────────────┘
+                                                ┌─────────────────────┐
+                                                │  Kubernetes         │
+                                                │  ┌───────────────┐  │
+                                                │  │  Go Consumer  │  │
+                                                │  │  (k8s Pod)    │  │
+                                                │  └───────────────┘  │
+                                                └─────────────────────┘
 ```
 
 ---
@@ -105,9 +113,12 @@ Every flag toggle publishes a fire-and-forget event to a Kafka topic (`flag.togg
   "newValue": false,
   "tier": "SENSITIVE",
   "source": "dashboard",
-  "timestamp": "2025-10-22T14:30:00.000Z"
+  "timestamp": "2025-10-22T14:30:00.000Z",
+  "rolloutPercentage": 75
 }
 ```
+
+`rolloutPercentage` is optional — present only when the event includes a percentage value. The Go consumer logs it when present and omits it otherwise.
 
 If Kafka is unavailable (e.g., running the backend without Docker), the producer warns once at startup and skips publishing — the toggle flow is unaffected.
 
@@ -132,6 +143,71 @@ cd feature-flag-backend && npm run start:dev
 The Kafka broker is configured with two listeners:
 - `localhost:9092` — for the NestJS backend running on the host
 - `kafka:29092` — for the Go consumer running inside Docker
+
+---
+
+## ☸️ Kubernetes (Phase 3)
+
+The `k8s/` folder contains production-ready manifests for deploying the Go consumer to a Kubernetes cluster.
+
+### Manifests
+
+**Deployment** (`k8s/consumer-deployment.yaml`)
+- 2 replicas by default
+- Liveness probe: `pgrep consumer` every 30 seconds
+- Resource requests: 64Mi memory, 100m CPU
+- Resource limits: 128Mi memory, 200m CPU
+- Environment sourced entirely from the ConfigMap — no hardcoded values in the spec
+
+**ConfigMap** (`k8s/consumer-configmap.yaml`)
+- Externalizes `KAFKA_BROKER`, `KAFKA_TOPIC`, `KAFKA_GROUP`, and `BACKEND_URL`
+- Swap values per environment (staging, production) without touching the Deployment spec
+
+**HorizontalPodAutoscaler** (`k8s/consumer-hpa.yaml`)
+- Scales between 1 and 10 replicas
+- Triggers at 60% average CPU utilization
+- In production, replace with [KEDA](https://keda.sh/) scaling on Kafka consumer lag — CPU is a poor proxy for a Kafka consumer; lag-based scaling reacts directly to backpressure on the topic
+
+### Deploy
+
+```bash
+kubectl apply -f k8s/
+```
+
+Check consumer logs:
+```bash
+kubectl logs -l app=feature-flag-consumer
+```
+
+Check autoscaler status:
+```bash
+kubectl get hpa
+```
+
+---
+
+## 🎚️ Gradual Rollout (Phase 4)
+
+Each feature flag has a `rolloutPercentage` field (0–100, default 100) that controls what fraction of traffic receives the flag when it is enabled.
+
+### How it works
+
+`isEnabled(flagName, clientId?)` uses a deterministic djb2 hash of the `clientId` string to assign the caller to a stable percentage bucket (0–99). If the bucket falls below `rolloutPercentage`, the flag is considered on for that caller. The same `clientId` always maps to the same bucket — a user never oscillates between enabled and disabled across requests.
+
+If no `clientId` is provided, the method falls back to the raw `enabled` boolean, preserving compatibility with callers that don't supply one.
+
+### UI
+
+When a flag is enabled, a percentage slider (0–100) appears below the toggle switch. Changes are debounced 500ms before the mutation fires, so rapid dragging does not produce a request per pixel. The current percentage is displayed numerically alongside the slider.
+
+### Real-world usage
+
+- **Canary releases** — expose a new feature to 5% of users before widening the rollout
+- **Staged ramp-ups** — increase from 10% → 25% → 50% → 100% over time while monitoring error rates
+- **Instant rollback** — slide to 0% to disable for all traffic without toggling the flag off entirely, preserving the intent to re-enable later
+- **Dark launches** — keep a flag enabled at 0% to exercise backend code paths without exposing anything to users
+
+Percentage changes are captured in the audit log with the new value appended to the source field (e.g., `dashboard (rollout: 75%)`).
 
 ---
 
@@ -327,6 +403,7 @@ All feature behavior is evaluated at runtime, without redeploying code.
 - Render (Backend hosting)
 - Vercel (Frontend hosting)
 - Docker (local Kafka + Go consumer)
+- Kubernetes (Go consumer deployment manifests)
 
 ---
 
@@ -356,7 +433,6 @@ It demonstrates:
 ## 📌 Future Enhancements
 
 - Backend-enforced authorization (403s on restricted actions)
-- Percentage-based rollouts
 - Environment-specific flags (dev / staging / prod)
 - Webhooks for flag change notifications
 - Advanced audit filtering and search
