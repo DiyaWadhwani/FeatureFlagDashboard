@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feature-flag-consumer-config
+data:
+  KAFKA_BROKER: "kafka:29092"
+  KAFKA_TOPIC: "flag.toggled"
+  KAFKA_GROUP: "feature-flag-consumer"
+  BACKEND_URL: "http://feature-flag-backend:3000"

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feature-flag-consumer
+  labels:
+    app: feature-flag-consumer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: feature-flag-consumer
+  template:
+    metadata:
+      labels:
+        app: feature-flag-consumer
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: consumer
+          image: feature-flag-consumer:latest
+          env:
+            - name: KAFKA_BROKER
+              valueFrom:
+                configMapKeyRef:
+                  name: feature-flag-consumer-config
+                  key: KAFKA_BROKER
+            - name: KAFKA_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: feature-flag-consumer-config
+                  key: KAFKA_TOPIC
+            - name: KAFKA_GROUP_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: feature-flag-consumer-config
+                  key: KAFKA_GROUP
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: feature-flag-consumer-config
+                  key: BACKEND_URL
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - consumer
+            initialDelaySeconds: 5
+            periodSeconds: 30

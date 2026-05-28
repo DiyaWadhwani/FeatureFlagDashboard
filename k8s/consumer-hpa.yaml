@@ -1,0 +1,23 @@
+# CPU-based autoscaling is a pragmatic starting point, but in production this
+# should be replaced with KEDA scaling based on Kafka consumer lag
+# (consumergroup/lag metric). CPU utilization on a consumer driven by I/O
+# wait is a poor proxy for actual backpressure; lag-based scaling reacts
+# directly to how far behind the consumer group has fallen on the topic.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: feature-flag-consumer-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: feature-flag-consumer
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
