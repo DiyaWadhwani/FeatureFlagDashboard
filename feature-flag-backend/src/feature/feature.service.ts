@@ -85,7 +85,7 @@ export class FeatureService {
     });
     if (!flag?.enabled) return false;
     if (!clientId) return true;
-    const bucket = this.hashClientId(clientId) % 100;
+    const bucket = this.hashClientId(`${flagName}:${clientId}`) % 100;
     return bucket < flag.rolloutPercentage;
   }
 
